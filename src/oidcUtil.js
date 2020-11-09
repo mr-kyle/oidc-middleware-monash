@@ -63,9 +63,16 @@ oidcUtil.createClient = context => {
     return options;
   };
   
-  // Monash Uni OKTA modification
-  const modIssuer = issuer.endsWith("/default") ? issuer : issuer + '/default'; 
-
+  // Check for monash uni okta issuer, and has no default in the query string. (WEBSW-1696)
+  // Need to use https://monashuniqa.oktapreview.com/oauth2/v1/userinfo 
+  // instead of https://monashuniqa.oktapreview.com/oauth2/default/v1/userinfo to get the Roles coming through.
+  let modIssuer = issuer;
+  if (issuer.startsWith("https://monashuniqa.oktapreview.com") || issuer.startsWith("https://monashuni.okta.com")) {
+    if (issuer.indexOf("/default") < 0) {
+      modIssuer = issuer.split(".com")[0]+".com";
+    }
+  }
+  
   return Issuer.discover(modIssuer +  '/.well-known/openid-configuration')
   .then(iss => {
     const client = new iss.Client({
